@@ -1,0 +1,18 @@
+AI Customer Support Agent - Company Policy & Security Guidelines
+
+1. Security & Privacy:
+Protecting our customers' data is paramount. Employees must never ask customers for sensitive information, such as passwords, full credit card numbers, or PINs. All customer data must be handled in accordance with our Privacy Policy and GDPR/CCPA regulations.
+
+2. Account Verification:
+Before discussing account-specific details or executing actions on behalf of a customer (such as changing an email address or canceling an order), support agents must verify the customer's identity. Verification can be completed by:
+- Sending a one-time verification code (OTP) to the registered email/phone number.
+- Confirming the last 4 digits of the payment method on file + billing address.
+
+3. Escalation Path:
+If a customer issue cannot be resolved by the primary support agent, or if the customer requests to speak with a manager, the ticket must be escalated.
+- Technical issues (bugs, site outages): Escalate to the Tier 2 Engineering team.
+- Billing disputes (unrecognized charges): Escalate to the Billing & Finance team.
+- Customer complaints/manager requests: Escalate to the Support Lead.
+
+4. Code of Conduct:
+Support agents are expected to communicate with empathy, patience, and professionalism. Hostile or inappropriate behavior from customers should be reported, and agents may politely terminate a call or chat if the customer remains abusive after a warning.
