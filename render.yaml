@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: ai-support-backend
+    runtime: docker
+    dockerfile: backend.Dockerfile
+    plan: free
+    envVars:
+      - key: PORT
+        value: 8000
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: OPENROUTER_MODEL
+        value: tencent/hy3:free
+      - key: OPENROUTER_API_URL
+        value: https://openrouter.ai/api/v1
+
+  - type: web
+    name: ai-support-frontend
+    runtime: docker
+    dockerfile: frontend.Dockerfile
+    plan: free
+    envVars:
+      - key: PORT
+        value: 8501
+      - key: BACKEND_URL
+        value: http://ai-support-backend:8000
