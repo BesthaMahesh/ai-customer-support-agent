@@ -49,10 +49,14 @@ st.markdown("""
     @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
     
     /* 1. Global Reset & Body styling */
-    html, body, [class*="css"] {
+    html, body, [class*="st-"] {
         font-family: 'Outfit', sans-serif;
-        background-color: #0B1020 !important;
-        color: #FFFFFF !important;
+        background-color: #F8FAFC !important;
+        color: #0F172A !important;
+    }
+    
+    .stApp {
+        background-color: #F8FAFC !important;
     }
     
     /* Hide Streamlit Default Brandings */
@@ -70,24 +74,30 @@ st.markdown("""
         height: 6px;
     }
     ::-webkit-scrollbar-track {
-        background: #0B1020;
+        background: #F1F5F9;
     }
     ::-webkit-scrollbar-thumb {
-        background: #273449;
+        background: #CBD5E1;
         border-radius: 10px;
     }
     ::-webkit-scrollbar-thumb:hover {
-        background: #7C3AED;
+        background: #3B82F6;
     }
     
     /* 3. Sidebar Customization */
     [data-testid="stSidebar"] {
-        background-color: #131A2A !important;
-        border-right: 1px solid #273449 !important;
+        background-color: #0F172A !important;
+        border-right: 1px solid #1E293B !important;
         padding-top: 1.5rem;
     }
+    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p,
+    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h3,
+    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h4,
+    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] span {
+        color: #E2E8F0 !important;
+    }
     [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h3 {
-        color: #94A3B8;
+        color: #94A3B8 !important;
         font-size: 0.85rem;
         text-transform: uppercase;
         letter-spacing: 0.1rem;
@@ -101,9 +111,10 @@ st.markdown("""
         position: sticky;
         top: 0;
         z-index: 99;
-        background: rgba(11, 16, 32, 0.85);
+        background: rgba(255, 255, 255, 0.85);
         backdrop-filter: blur(12px);
-        border-bottom: 1px solid #273449;
+        border-bottom: 1px solid #E2E8F0;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
         padding: 12px 24px;
         display: flex;
         align-items: center;
@@ -114,14 +125,14 @@ st.markdown("""
         width: 32px;
         height: 32px;
         border-radius: 50%;
-        background: linear-gradient(135deg, #7C3AED 0%, #22D3EE 100%);
+        background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
         color: white;
         display: flex;
         align-items: center;
         justify-content: center;
         font-weight: bold;
         font-size: 0.85rem;
-        border: 2px solid #273449;
+        border: 2px solid #E2E8F0;
     }
     
     /* 5. Custom Analytics Dashboard Cards */
@@ -132,11 +143,11 @@ st.markdown("""
         margin-bottom: 2rem;
     }
     .analytics-card {
-        background: #131A2A;
-        border: 1px solid #273449;
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
         border-radius: 12px;
         padding: 1.25rem;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         display: flex;
         flex-direction: column;
@@ -144,12 +155,12 @@ st.markdown("""
     }
     .analytics-card:hover {
         transform: translateY(-4px);
-        border-color: #7C3AED;
-        box-shadow: 0 10px 25px rgba(124, 58, 237, 0.15);
+        border-color: #3B82F6;
+        box-shadow: 0 10px 25px rgba(59, 130, 246, 0.15);
     }
     .card-meta {
         font-size: 0.75rem;
-        color: #94A3B8;
+        color: #64748B;
         font-weight: 500;
         text-transform: uppercase;
         letter-spacing: 0.05rem;
@@ -157,17 +168,17 @@ st.markdown("""
     .card-value {
         font-size: 1.8rem;
         font-weight: 700;
-        color: #FFFFFF;
+        color: #0F172A;
         margin-top: 0.5rem;
-        background: linear-gradient(90deg, #FFFFFF, #94A3B8);
+        background: linear-gradient(90deg, #0F172A, #1E3A8A);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
     }
     
     /* 6. Document Inventory List Cards */
     .doc-saas-card {
-        background: #1B2335;
-        border: 1px solid #273449;
+        background: #F8FAFC;
+        border: 1px solid #E2E8F0;
         border-radius: 10px;
         padding: 10px 14px;
         margin-bottom: 0.75rem;
@@ -177,11 +188,11 @@ st.markdown("""
         transition: border-color 0.2s ease;
     }
     .doc-saas-card:hover {
-        border-color: #8B5CF6;
+        border-color: #3B82F6;
     }
     .doc-meta {
         font-size: 0.75rem;
-        color: #94A3B8;
+        color: #64748B;
     }
     
     /* 7. Chat Windows Styling (ChatGPT-like) */
@@ -189,15 +200,15 @@ st.markdown("""
         display: flex;
         gap: 16px;
         padding: 1.5rem;
-        border-bottom: 1px solid #1B2335;
+        border-bottom: 1px solid #F1F5F9;
         align-items: flex-start;
     }
     .message-container.user {
-        background-color: #131A2A;
+        background-color: #EFF6FF;
     }
     .message-container.assistant {
-        background-color: #0B1020;
-        border-left: 3px solid #7C3AED;
+        background-color: #FFFFFF;
+        border-left: 3px solid #2563EB;
     }
     .avatar-wrapper {
         width: 38px;
@@ -211,12 +222,12 @@ st.markdown("""
         font-size: 1rem;
     }
     .avatar-wrapper.user {
-        background-color: #1B2335;
-        color: #22D3EE;
-        border: 1px solid #273449;
+        background-color: #DBEAFE;
+        color: #2563EB;
+        border: 1px solid #BFDBFE;
     }
     .avatar-wrapper.assistant {
-        background: linear-gradient(135deg, #7C3AED 0%, #EC4899 100%);
+        background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
         color: white;
     }
     .msg-header {
@@ -228,27 +239,33 @@ st.markdown("""
     .msg-author {
         font-weight: 600;
         font-size: 0.95rem;
-        color: #FFFFFF;
+        color: #0F172A;
+    }
+    .message-container.user .msg-author {
+        color: #1E3A8A;
+    }
+    .message-container.assistant .msg-author {
+        color: #2563EB;
     }
     .msg-time {
         font-size: 0.75rem;
-        color: #94A3B8;
+        color: #64748B;
         margin-left: 10px;
     }
     .msg-body {
         font-size: 0.95rem;
-        color: #E2E8F0;
+        color: #334155;
         line-height: 1.6;
     }
     
     /* 8. Citation cards & Progress bars (Right Column) */
     .citation-card {
-        background: #131A2A;
-        border: 1px solid #273449;
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
         border-radius: 12px;
         padding: 14px;
         margin-bottom: 1rem;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
     }
     .confidence-container {
         display: flex;
@@ -260,7 +277,7 @@ st.markdown("""
     .confidence-bar-outer {
         width: 100%;
         height: 5px;
-        background: #1B2335;
+        background: #E2E8F0;
         border-radius: 10px;
         overflow: hidden;
     }
@@ -273,22 +290,22 @@ st.markdown("""
     /* Custom input bar drop shadow styling */
     .stChatInputContainer {
         border-radius: 24px !important;
-        border: 1px solid #273449 !important;
-        background-color: #131A2A !important;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4) !important;
+        border: 1px solid #E2E8F0 !important;
+        background-color: #FFFFFF !important;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05) !important;
         transition: all 0.3s ease !important;
         padding: 4px 10px !important;
     }
     .stChatInputContainer:focus-within {
-        border-color: #7C3AED !important;
-        box-shadow: 0 0 20px rgba(124, 58, 237, 0.4) !important;
+        border-color: #2563EB !important;
+        box-shadow: 0 0 20px rgba(37, 99, 235, 0.15) !important;
     }
     
     /* Styling Buttons */
     .stButton>button {
-        background: #131A2A;
-        color: #FFFFFF;
-        border: 1px solid #273449;
+        background: #FFFFFF;
+        color: #1E293B;
+        border: 1px solid #E2E8F0;
         border-radius: 8px;
         padding: 6px 12px;
         font-size: 0.85rem;
@@ -296,19 +313,19 @@ st.markdown("""
         transition: all 0.2s ease;
     }
     .stButton>button:hover {
-        background: #1B2335;
-        border-color: #7C3AED;
-        color: #7C3AED;
+        background: #F8FAFC;
+        border-color: #2563EB;
+        color: #2563EB;
     }
     
     /* Primary Gradient Button Action */
     .gradient-btn-wrapper .stButton>button {
-        background: linear-gradient(135deg, #7C3AED 0%, #8B5CF6 100%) !important;
+        background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%) !important;
         color: white !important;
         border: none !important;
     }
     .gradient-btn-wrapper .stButton>button:hover {
-        box-shadow: 0 0 12px rgba(124, 58, 237, 0.6) !important;
+        box-shadow: 0 0 12px rgba(37, 99, 235, 0.4) !important;
         transform: scale(1.02);
     }
 </style>
