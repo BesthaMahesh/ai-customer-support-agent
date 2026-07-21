@@ -98,14 +98,86 @@ async def query_endpoint(req: QueryRequest):
 
 @app.get("/documents")
 async def list_documents():
-    """Lists unique names of all loaded documents in the index."""
+    """Lists all loaded documents with their chunk counts and total chunk count."""
     # Reload index to get latest files
     vector_store.load()
-    unique_sources = sorted(list(set(meta["source"] for meta in vector_store.metadata)))
+    doc_stats = {}
+    for meta in vector_store.metadata:
+        source = meta["source"]
+        doc_stats[source] = doc_stats.get(source, 0) + 1
     return {
-        "documents": unique_sources,
+        "documents": doc_stats,
         "chunks_total": len(vector_store.metadata)
     }
+
+@app.post("/delete")
+async def delete_document(filename: str):
+    """Deletes a single document from the index, rebuilds, and saves the index."""
+    try:
+        logger.info(f"Received API delete request for file: '{filename}'")
+        vector_store.load()
+        vector_store.remove_document(filename)
+        vector_store.rebuild_index()
+        vector_store.save()
+        return {"message": f"Successfully deleted document '{filename}'"}
+    except Exception as e:
+        logger.error(f"Error deleting document: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to delete document: {str(e)}")
+
+@app.post("/query/stream")
+async def query_stream_endpoint(req: QueryRequest):
+    """Streams RAG prompt tokens along with retrieved sources in JSON lines."""
+    from fastapi.responses import StreamingResponse
+    import json
+    from embeddings import get_embedding
+    from rag import SYSTEM_PROMPT
+    from chatbot import get_chat_response_stream
+
+    try:
+        vector_store.load()
+        if vector_store.index.ntotal == 0:
+            async def empty_generator():
+                yield json.dumps({"token": "No documents have been indexed yet. Please upload files first."}) + "\n"
+            return StreamingResponse(empty_generator(), media_type="application/x-ndjson")
+
+        # 1. Embed query
+        query_emb = get_embedding(req.query)
+
+        # 2. Search FAISS index
+        results = vector_store.search_mmr(query_emb, k=req.k, lambda_val=config.MMR_LAMBDA)
+
+        # 3. Format context
+        context_chunks = []
+        sources = []
+        for i, (meta, dist) in enumerate(results):
+            source_info = f"Source: {meta['source']} (Page: {meta['page']}) (Chunk: {meta['chunk_id']})"
+            context_chunks.append(f"[{i+1}] {source_info}\nContent: {meta['text']}")
+            sources.append({
+                "source": meta["source"],
+                "page": meta["page"],
+                "chunk_id": meta["chunk_id"],
+                "text": meta["text"],
+                "score": float(dist)
+            })
+
+        context = "\n\n".join(context_chunks)
+
+        # 4. Prompt construction
+        formatted_system = SYSTEM_PROMPT.format(context=context if context else "No context available.")
+        user_prompt = f"User Question: {req.query}\nAnswer:"
+
+        # 5. Stream response
+        def generator():
+            # First send sources metadata
+            yield json.dumps({"sources": sources}) + "\n"
+            # Stream actual LLM response tokens
+            for token in get_chat_response_stream(formatted_system, user_prompt):
+                yield json.dumps({"token": token}) + "\n"
+
+        return StreamingResponse(generator(), media_type="application/x-ndjson")
+    except Exception as e:
+        logger.error(f"Error executing streaming query: {e}")
+        raise HTTPException(status_code=500, detail=f"Streaming query failed: {str(e)}")
 
 @app.post("/clear")
 async def clear_index():

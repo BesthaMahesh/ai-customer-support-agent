@@ -7,14 +7,6 @@ from datetime import datetime
 from fpdf import FPDF
 from typing import List, Dict, Any
 
-# Load configurations and modules
-import config
-from utils import get_system_metrics, l2_distance_to_confidence, get_logger
-from vector_store import FAISSVectorStore
-from rag import query_rag_stream
-
-logger = get_logger("SaaSFrontendUI")
-
 # Set Page Config
 st.set_page_config(
     page_title="RAG.SaaS Enterprise Workspace",
@@ -23,9 +15,33 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Global Vector Store Reference (Dynamic loading on run)
-vector_store = FAISSVectorStore()
-vector_store.load()
+# Load configurations and modules
+import config
+from utils import get_system_metrics, l2_distance_to_confidence, get_logger
+import json
+
+logger = get_logger("SaaSFrontendUI")
+
+def backend_query_stream(prompt: str):
+    """Queries the backend streaming endpoint and yields text tokens while saving sources."""
+    try:
+        res = requests.post(
+            f"{config.BACKEND_URL}/query/stream",
+            json={"query": prompt, "k": config.DEFAULT_K},
+            stream=True
+        )
+        if res.status_code == 200:
+            for line in res.iter_lines():
+                if line:
+                    data = json.loads(line.decode("utf-8"))
+                    if "sources" in data:
+                        st.session_state.last_sources = data["sources"]
+                    elif "token" in data:
+                        yield data["token"]
+        else:
+            yield f"Error from backend API: {res.text}"
+    except Exception as e:
+        yield f"Backend connection failed: {str(e)}"
 
 # Inject Billion-Dollar SaaS Theme Styling
 st.markdown("""
@@ -341,8 +357,26 @@ if "last_sources" not in st.session_state:
 if "debug_mode" not in st.session_state:
     st.session_state.debug_mode = False
 
-# Refresh index from disk on load
-vector_store.load()
+# Fetch stats from backend API
+try:
+    res = requests.get(f"{config.BACKEND_URL}/documents")
+    if res.status_code == 200:
+        backend_data = res.json()
+        documents_dict = backend_data.get("documents", {})
+        unique_docs = sorted(list(documents_dict.keys()))
+        total_chunks_count = backend_data.get("chunks_total", 0)
+    else:
+        unique_docs = []
+        documents_dict = {}
+        total_chunks_count = 0
+except Exception as e:
+    unique_docs = []
+    documents_dict = {}
+    total_chunks_count = 0
+    logger.error(f"Failed to fetch stats from backend: {e}")
+
+unique_docs_count = len(unique_docs)
+sys_metrics = get_system_metrics()
 
 # ----------------- TOP NAVBAR HEADER -----------------
 st.markdown(f"""
@@ -360,10 +394,6 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # ----------------- ANALYTICS DASHBOARD ROW -----------------
-unique_docs_count = len(sorted(list(set(meta["source"] for meta in vector_store.metadata))))
-total_chunks_count = len(vector_store.metadata)
-sys_metrics = get_system_metrics()
-
 st.markdown(f"""
 <div class="analytics-grid">
     <div class="analytics-card">
@@ -380,7 +410,7 @@ st.markdown(f"""
     </div>
     <div class="analytics-card">
         <div class="card-meta">Vector DB Size</div>
-        <div class="card-value">{vector_store.index.ntotal} vectors</div>
+        <div class="card-value">{total_chunks_count} vectors</div>
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -425,20 +455,18 @@ with st.sidebar:
                         st.error(f"Ingestion failed: {e}")
         
         if new_upload:
-            vector_store.load()
             st.toast("Vector Database updated!", icon="🗂️")
             time.sleep(0.5)
             st.rerun()
 
     # Document card list with inline delete triggers!
     st.markdown("### Document Index Manager")
-    unique_docs = sorted(list(set(meta["source"] for meta in vector_store.metadata)))
     if unique_docs:
         for doc in unique_docs:
             # Render a custom file display card row
             col_doc_name, col_doc_del = st.columns([8, 2])
             with col_doc_name:
-                doc_chunks = sum(1 for m in vector_store.metadata if m["source"] == doc)
+                doc_chunks = documents_dict.get(doc, 0)
                 st.markdown(f"""
                     <div style="font-size: 0.85rem; font-weight: 500; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
                         📄 {doc}<br/>
@@ -447,16 +475,20 @@ with st.sidebar:
                 """, unsafe_allow_html=True)
             with col_doc_del:
                 if st.button("🗑️", key=f"del_{doc}", help=f"Wipe {doc} from vector index"):
-                    # Wipe file from local index and disk metadata
-                    vector_store.remove_document(doc)
-                    vector_store.save()
-                    # Reset dynamic file uploaded session states
-                    for key in list(st.session_state.keys()):
-                        if doc in key:
-                            del st.session_state[key]
-                    st.toast(f"Removed {doc}!", icon="🗑️")
-                    time.sleep(0.5)
-                    st.rerun()
+                    try:
+                        res = requests.post(f"{config.BACKEND_URL}/delete", params={"filename": doc})
+                        if res.status_code == 200:
+                            st.toast(f"Removed {doc}!", icon="🗑️")
+                            # Reset dynamic file uploaded session states
+                            for key in list(st.session_state.keys()):
+                                if doc in key:
+                                    del st.session_state[key]
+                            time.sleep(0.5)
+                            st.rerun()
+                        else:
+                            st.error(f"Failed to delete {doc}: {res.json().get('detail', 'Error')}")
+                    except Exception as e:
+                        st.error(f"Failed to delete: {e}")
     else:
         st.info("No files indexed. Drag and drop documents to start.")
         
@@ -480,7 +512,6 @@ with st.sidebar:
                             del st.session_state[key]
                     st.session_state.messages = []
                     st.session_state.last_sources = []
-                    vector_store.clear()
                     st.toast("Database purged!", icon="🧹")
                     time.sleep(0.5)
                     st.rerun()
@@ -565,19 +596,18 @@ with col_workspace:
         
         # Handle assistant stream completion
         with st.chat_message("assistant", avatar="🤖"):
-            if vector_store.index.ntotal == 0:
+            if total_chunks_count == 0:
                 answer = "No document index is active yet. Please ingest files in the sidebar."
                 st.write(answer)
                 st.session_state.messages.append({"role": "assistant", "content": answer})
                 st.session_state.last_sources = []
             else:
                 try:
-                    # Stream tokens word-by-word
-                    stream_gen, sources = query_rag_stream(prompt, vector_store, k=config.DEFAULT_K)
+                    # Stream tokens word-by-word from backend
+                    stream_gen = backend_query_stream(prompt)
                     full_response = st.write_stream(stream_gen)
                     
                     st.session_state.messages.append({"role": "assistant", "content": full_response})
-                    st.session_state.last_sources = sources
                 except Exception as e:
                     logger.error(f"RAG query execution failed: {e}")
                     error_msg = f"API Service failure: {str(e)}"
@@ -648,16 +678,15 @@ with col_citations:
                 st.write(sug)
                 
             with st.chat_message("assistant"):
-                if vector_store.index.ntotal == 0:
+                if total_chunks_count == 0:
                     answer = "Please upload documents first in the sidebar before asking suggestions."
                     st.write(answer)
                     st.session_state.messages.append({"role": "assistant", "content": answer})
                     st.session_state.last_sources = []
                 else:
-                    stream_gen, sources = query_rag_stream(sug, vector_store, k=config.DEFAULT_K)
+                    stream_gen = backend_query_stream(sug)
                     full_response = st.write_stream(stream_gen)
                     st.session_state.messages.append({"role": "assistant", "content": full_response})
-                    st.session_state.last_sources = sources
             st.rerun()
 
 # ----------------- RETRIEVAL DEBUG PANEL -----------------
