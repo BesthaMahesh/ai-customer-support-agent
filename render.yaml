@@ -10,7 +10,7 @@ services:
       - key: OPENROUTER_API_KEY
         sync: false
       - key: OPENROUTER_MODEL
-        value: tencent/hy3:free
+        value: openrouter/free
       - key: OPENROUTER_API_URL
         value: https://openrouter.ai/api/v1
 
