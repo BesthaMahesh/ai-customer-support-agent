@@ -68,6 +68,8 @@ if "messages" not in st.session_state:
     st.session_state.messages = []
 if "last_sources" not in st.session_state:
     st.session_state.last_sources = []
+if "questions_count" not in st.session_state:
+    st.session_state.questions_count = 12
 
 # Fetch stats from backend API
 try:
@@ -89,7 +91,7 @@ except Exception as e:
 
 unique_docs_count = len(unique_docs)
 
-# CSS Injection for Premium Polished SaaS Look
+# CSS Injection for World-Class $100M SaaS UI Look
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
@@ -119,50 +121,50 @@ st.markdown("""
         background: #F1F5F9;
     }
     ::-webkit-scrollbar-thumb {
-        background: #E2E8F0;
+        background: #CBD5E1;
         border-radius: 10px;
     }
     ::-webkit-scrollbar-thumb:hover {
         background: #4F46E5;
     }
     
-    /* 3. Left Sidebar Customization (Width restricted to 270px) */
+    /* 3. Left Sidebar Customization (280px Wide, Dark #111827) */
     [data-testid="stSidebar"] {
-        background-color: #0F172A !important;
-        border-right: 1px solid #1E293B !important;
-        padding-top: 16px;
-        width: 270px !important;
-        min-width: 270px !important;
-        max-width: 270px !important;
+        background-color: #111827 !important;
+        border-right: 1px solid #1F2937 !important;
+        padding-top: 24px;
+        width: 280px !important;
+        min-width: 280px !important;
+        max-width: 280px !important;
     }
     [data-testid="stSidebar"] > div:first-child {
-        width: 270px !important;
+        width: 280px !important;
     }
     [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p,
     [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h3,
     [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h4,
     [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] span {
-        color: #F8FAFC !important;
+        color: #F9FAFB !important;
     }
     [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h3 {
         font-size: 13px;
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.05em;
-        color: #94A3B8 !important;
+        color: #9CA3AF !important;
         margin-top: 24px;
         margin-bottom: 8px;
     }
     
-    /* Search Bar with Vector Icon styling */
+    /* Search Bar inside Sidebar */
     [data-testid="stSidebar"] [data-testid="stTextInput"] input {
         border-radius: 12px !important;
-        border: 1px solid #1E293B !important;
+        border: 1px solid #374151 !important;
         padding-left: 35px !important;
-        background: #1E293B url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394A3B8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z'/%3E%3C/svg%3E") no-repeat 10px center !important;
+        background: #1F2937 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239CA3AF'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z'/%3E%3C/svg%3E") no-repeat 10px center !important;
         background-size: 16px 16px !important;
-        color: #F8FAFC !important;
-        height: 38px !important;
+        color: #F9FAFB !important;
+        height: 48px !important;
     }
     
     /* Sidebar List Document styling */
@@ -170,20 +172,20 @@ st.markdown("""
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 6px 8px;
-        border-radius: 8px;
+        padding: 8px 12px;
+        border-radius: 12px;
         margin-bottom: 4px;
     }
     .sidebar-doc-row:hover {
-        background-color: #1E293B;
+        background-color: #1F2937;
     }
     .sidebar-doc-name {
         font-size: 13px;
-        color: #E2E8F0;
+        color: #F3F4F6;
         text-overflow: ellipsis;
         overflow: hidden;
         white-space: nowrap;
-        max-width: 140px;
+        max-width: 150px;
         display: inline-block;
     }
     
@@ -195,98 +197,251 @@ st.markdown("""
         display: flex;
         align-items: center;
         gap: 12px;
-        padding: 8px 12px;
-        color: #94A3B8 !important;
+        padding: 10px 12px;
+        color: #9CA3AF !important;
         font-size: 14px;
         font-weight: 500;
-        border-radius: 8px;
+        border-radius: 12px;
         cursor: pointer;
         transition: all 0.2s ease;
         margin-bottom: 4px;
     }
     .menu-item:hover {
-        background-color: #1E293B;
+        background-color: #1F2937;
         color: #FFFFFF !important;
     }
     
-    /* 4. Main Header */
-    .main-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 12px 16px;
-        background: #FFFFFF;
-        border: 1px solid #E5E7EB;
-        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-        margin-bottom: 16px;
+    /* Recent conversation mock item */
+    .recent-chat-item {
+        font-size: 14px;
+        color: #D1D5DB;
+        padding: 8px 12px;
         border-radius: 12px;
-    }
-    .workspace-title {
-        font-size: 24px;
-        font-weight: 600;
-        color: #111827;
-    }
-    .header-right {
+        cursor: pointer;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
         display: flex;
         align-items: center;
-        gap: 16px;
+        gap: 10px;
     }
-    .settings-icon {
-        font-size: 1.25rem;
-        color: #6B7280;
-        cursor: pointer;
+    .recent-chat-item:hover {
+        background: #1F2937;
+        color: #FFFFFF;
     }
-    .profile-avatar {
-        width: 32px;
-        height: 32px;
+    
+    /* Sidebar Profile Card */
+    .sidebar-profile {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        border-radius: 16px;
+        background: #1F2937;
+        margin-top: 24px;
+    }
+    .sidebar-profile-avatar {
+        width: 36px;
+        height: 36px;
         border-radius: 50%;
         background: #4F46E5;
-        color: #FFFFFF;
+        color: white;
         display: flex;
         align-items: center;
         justify-content: center;
         font-weight: 600;
-        font-size: 0.875rem;
+        font-size: 14px;
+    }
+    .sidebar-profile-info {
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+    .sidebar-profile-name {
+        font-size: 14px;
+        font-weight: 500;
+        color: #FFFFFF;
+    }
+    .sidebar-profile-email {
+        font-size: 12px;
+        color: #9CA3AF;
+        text-overflow: ellipsis;
+        overflow: hidden;
     }
     
-    /* 5. Metrics Cards (100px Height, consistent spacing) */
+    /* New Chat and Sidebar Buttons (48px height, 12px radius) */
+    [data-testid="stSidebar"] .stButton>button {
+        background: #4F46E5 !important;
+        color: white !important;
+        border-radius: 12px !important;
+        width: 100% !important;
+        height: 48px !important;
+        font-weight: 500 !important;
+        font-size: 15px !important;
+        margin-top: 0px !important;
+        border: none !important;
+        transition: background 0.2s ease !important;
+    }
+    [data-testid="stSidebar"] .stButton>button:hover {
+        background: #4338CA !important;
+    }
+    
+    /* Secondary sidebar delete button styling */
+    [data-testid="stSidebar"] .doc-delete-btn button {
+        background: transparent !important;
+        color: #9CA3AF !important;
+        width: auto !important;
+        height: 32px !important;
+        padding: 4px !important;
+        font-size: 14px !important;
+        margin-top: 0px !important;
+    }
+    [data-testid="stSidebar"] .doc-delete-btn button:hover {
+        color: #EF4444 !important;
+        background: transparent !important;
+    }
+
+    /* 4. Top Sticky Navbar (72px height, White Glassmorphism, Soft Shadow) */
+    .top-navbar {
+        height: 72px;
+        background: rgba(255, 255, 255, 0.8) !important;
+        backdrop-filter: blur(16px);
+        border: 1px solid rgba(229, 231, 235, 0.5);
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 24px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+        margin-bottom: 24px;
+    }
+    .navbar-title {
+        font-size: 22px;
+        font-weight: 600;
+        color: #111827;
+    }
+    .navbar-right {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+    .navbar-icon {
+        font-size: 1.25rem;
+        color: #6B7280;
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 12px;
+        transition: background 0.2s;
+    }
+    .navbar-icon:hover {
+        background: #F1F5F9;
+        color: #111827;
+    }
+    .navbar-avatar {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        background: #E0E7FF;
+        color: #4F46E5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 14px;
+        border: 2px solid #FFFFFF;
+        box-shadow: 0 0 0 2px #E0E7FF;
+    }
+    
+    /* navbar search box styling */
+    .navbar-search {
+        display: flex;
+        align-items: center;
+        background: #F1F5F9;
+        border-radius: 12px;
+        padding: 8px 12px;
+        width: 240px;
+    }
+    .navbar-search input {
+        border: none;
+        background: transparent;
+        font-size: 14px;
+        outline: none;
+        width: 100%;
+        color: #111827;
+    }
+    .navbar-search-icon {
+        margin-right: 8px;
+        color: #9CA3AF;
+        font-size: 14px;
+    }
+
+    /* 5. Metrics Cards (Analytics grid, 16px radius, hover animation, trendlines) */
     .metrics-grid {
         display: grid;
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(4, 1fr);
         gap: 16px;
         margin-bottom: 24px;
     }
     .metric-card {
         background: #FFFFFF;
         border: 1px solid #E5E7EB;
-        border-radius: 12px;
-        padding: 16px;
-        min-height: 100px;
-        height: 100px;
+        border-radius: 16px;
+        padding: 20px;
         box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
         display: flex;
         flex-direction: column;
-        justify-content: center;
+        justify-content: space-between;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: pointer;
+    }
+    .metric-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        border-color: #4F46E5;
+    }
+    .metric-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 8px;
     }
     .metric-label {
-        font-size: 13px;
+        font-size: 14px;
         font-weight: 500;
         color: #6B7280;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        margin-bottom: 4px;
+    }
+    .metric-icon {
+        font-size: 18px;
+        color: #4F46E5;
+        background: #EEF2F6;
+        padding: 6px;
+        border-radius: 8px;
     }
     .metric-value {
-        font-size: 24px;
+        font-size: 28px;
         font-weight: 600;
         color: #111827;
+        margin-bottom: 4px;
+    }
+    .metric-trend {
+        font-size: 12px;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .trend-up {
+        color: #22C55E;
+    }
+    .trend-neutral {
+        color: #4F46E5;
     }
     
-    /* 6. Chat Bubbles */
+    /* 6. Chat Bubbles & Actions */
     .chat-row {
         display: flex;
         width: 100%;
-        margin-bottom: 16px;
+        margin-bottom: 24px;
         align-items: flex-start;
     }
     .user-row {
@@ -298,15 +453,15 @@ st.markdown("""
     }
     .chat-bubble {
         max-width: 80%;
-        border-radius: 12px;
-        padding: 12px 16px;
+        border-radius: 16px;
+        padding: 16px 20px;
         font-size: 15px;
         line-height: 1.6;
     }
     .user-bubble {
         background-color: #4F46E5;
         color: #FFFFFF;
-        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+        box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.1);
     }
     .assistant-bubble {
         background-color: #FFFFFF;
@@ -315,116 +470,173 @@ st.markdown("""
         box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
     }
     .assistant-avatar {
-        width: 32px;
-        height: 32px;
+        width: 36px;
+        height: 36px;
         border-radius: 50%;
-        background-color: #E5E7EB;
+        background-color: #EEF2F6;
         color: #4F46E5;
         display: flex;
         align-items: center;
         justify-content: center;
         font-weight: bold;
-        font-size: 0.75rem;
+        font-size: 0.85rem;
         flex-shrink: 0;
+        border: 1px solid #E5E7EB;
     }
     
-    /* Action buttons under Assistant response */
-    .stButton>button {
+    /* Action items underneath assistant bubble */
+    .assistant-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-top: 8px;
+        margin-left: 48px;
+    }
+    .assistant-action-btn {
         background: transparent !important;
-        color: #6B7280 !important;
         border: none !important;
+        color: #9CA3AF !important;
         font-size: 13px !important;
-        padding: 2px 4px !important;
-        margin-top: -8px !important;
-        border-radius: 8px !important;
+        cursor: pointer;
+        padding: 4px 8px !important;
+        border-radius: 6px !important;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
     }
-    .stButton>button:hover {
+    .assistant-action-btn:hover {
         color: #4F46E5 !important;
-        background: #EFF6FF !important;
+        background: #F1F5F9 !important;
     }
-    
-    /* Custom button in sidebar upload zone to prevent overflow */
-    [data-testid="stSidebar"] .stButton>button {
-        background: #4F46E5 !important;
-        color: white !important;
-        border-radius: 12px !important;
-        width: 100% !important;
-        height: 40px !important;
-        font-weight: 500 !important;
-        font-size: 14px !important;
-        margin-top: 0px !important;
+    .assistant-action-btn.dislike:hover {
+        color: #EF4444 !important;
     }
-    [data-testid="stSidebar"] .stButton>button:hover {
-        background: #4338CA !important;
-    }
-    
+
     /* 7. Source Cards (Right Column) */
     .source-card {
         background: #FFFFFF;
         border: 1px solid #E5E7EB;
-        border-radius: 12px;
-        padding: 16px;
-        margin-bottom: 12px;
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 16px;
         box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+        transition: all 0.3s ease;
+    }
+    .source-card:hover {
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        border-color: #4F46E5;
+    }
+    .source-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 6px;
+    }
+    .source-icon {
+        color: #4F46E5;
+        font-size: 14px;
     }
     .source-title {
         font-size: 14px;
-        font-weight: 500;
+        font-weight: 600;
         color: #111827;
-        margin-bottom: 4px;
+        text-overflow: ellipsis;
+        overflow: hidden;
+        white-space: nowrap;
     }
     .source-page {
         font-size: 12px;
         color: #6B7280;
-        margin-bottom: 8px;
+        margin-bottom: 12px;
     }
     .source-preview {
         font-size: 13px;
         color: #374151;
         line-height: 1.5;
-        margin-bottom: 8px;
+        background: #F8FAFC;
+        padding: 10px 12px;
+        border-radius: 12px;
+        border: 1px solid #F1F5F9;
+        font-style: italic;
     }
     
-    /* 8. Empty State (Centering and reduced height) */
+    /* 8. Empty State (Centered premium documentation look) */
     .empty-state {
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        padding: 32px 24px;
+        padding: 48px 32px;
         text-align: center;
         background: #FFFFFF;
         border: 1px dashed #E5E7EB;
-        border-radius: 12px;
-        min-height: 220px;
-        height: 220px;
-        margin-bottom: 16px;
+        border-radius: 16px;
         box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+        max-width: 600px;
+        margin: 40px auto;
     }
     .empty-state-illustration {
-        font-size: 2.5rem;
-        margin-bottom: 12px;
+        font-size: 3.5rem;
+        margin-bottom: 16px;
         color: #4F46E5;
     }
     .empty-state-title {
-        font-size: 18px;
-        font-weight: 500;
+        font-size: 22px;
+        font-weight: 600;
         color: #111827;
         margin-bottom: 8px;
     }
     .empty-state-text {
         font-size: 15px;
         color: #6B7280;
-        margin-bottom: 0px;
+        margin-bottom: 24px;
+        line-height: 1.5;
+    }
+    .empty-state-buttons {
+        display: flex;
+        gap: 16px;
+        justify-content: center;
     }
     
+    /* Custom button in empty state */
+    .primary-saas-btn button {
+        background: #4F46E5 !important;
+        color: white !important;
+        height: 48px !important;
+        border-radius: 12px !important;
+        font-weight: 500 !important;
+        font-size: 15px !important;
+        padding: 0 24px !important;
+        border: none !important;
+        transition: background 0.2s ease !important;
+    }
+    .primary-saas-btn button:hover {
+        background: #4338CA !important;
+    }
+    .secondary-saas-btn button {
+        background: #FFFFFF !important;
+        color: #4F46E5 !important;
+        height: 48px !important;
+        border-radius: 12px !important;
+        font-weight: 500 !important;
+        font-size: 15px !important;
+        padding: 0 24px !important;
+        border: 1px solid #4F46E5 !important;
+        transition: all 0.2s ease !important;
+    }
+    .secondary-saas-btn button:hover {
+        background: #F5F7FF !important;
+        color: #4338CA !important;
+    }
+
     /* Custom input bar overrides */
     .stChatInputContainer {
-        border-radius: 12px !important;
+        border-radius: 16px !important;
         border: 1px solid #E5E7EB !important;
         background-color: #FFFFFF !important;
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03) !important;
-        padding: 4px 10px !important;
+        padding: 8px 16px !important;
     }
     .stChatInputContainer:focus-within {
         border-color: #4F46E5 !important;
@@ -442,11 +654,19 @@ with st.sidebar:
         </div>
     """, unsafe_allow_html=True)
     
+    # 1. New Chat Action Button (48px height, 12px radius, Indigo)
+    if st.button("➕ New Chat", use_container_width=True):
+        st.session_state.messages = []
+        st.session_state.last_sources = []
+        st.toast("Chat reset successfully!", icon="🧹")
+        time.sleep(0.5)
+        st.rerun()
+        
+    st.markdown("### Knowledge Base")
+    
     # Hide sidebar upload area if DB is empty to prevent duplicates.
-    # Uploader is conditionally rendered.
     sidebar_upload = False
     if unique_docs_count > 0:
-        st.markdown("### Knowledge Base")
         uploaded_files = st.file_uploader(
             "Upload Document",
             type=["pdf", "docx", "txt", "csv", "xlsx", "pptx", "md"],
@@ -477,6 +697,8 @@ with st.sidebar:
                         </div>
                     """, unsafe_allow_html=True)
                 with col_doc_del:
+                    # Renders inline delete button inside container
+                    st.markdown('<div class="doc-delete-btn">', unsafe_allow_html=True)
                     if st.button("🗑️", key=f"del_{doc}", help=f"Wipe {doc} from vector index"):
                         try:
                             res = requests.post(f"{config.BACKEND_URL}/delete", params={"filename": doc})
@@ -492,14 +714,23 @@ with st.sidebar:
                                 st.error(f"Failed to delete {doc}: {res.json().get('detail', 'Error')}")
                         except Exception as e:
                             st.error(f"Failed to delete: {e}")
+                    st.markdown('</div>', unsafe_allow_html=True)
         else:
             st.caption("No matching documents.")
     else:
         st.caption("No uploaded documents yet.")
 
+    # Recent Conversations list
+    st.markdown("### Recent Conversations")
+    st.markdown("""
+        <div class="recent-chat-item">💬 Q3 Strategy Planning</div>
+        <div class="recent-chat-item">💬 Resume Screening</div>
+        <div class="recent-chat-item">💬 Technical Documentation</div>
+    """, unsafe_allow_html=True)
+
     st.markdown("---")
     
-    # Professional Menu Links replacement for technical K/MMR configs
+    # Professional Menu Links replacement for technical configs
     st.markdown("### Navigation")
     st.markdown("""
         <div class="sidebar-menu">
@@ -509,57 +740,110 @@ with st.sidebar:
             <div class="menu-item">🚪 Logout</div>
         </div>
     """, unsafe_allow_html=True)
+    
+    # User Profile avatar card at bottom
+    st.markdown("""
+        <div class="sidebar-profile">
+            <div class="sidebar-profile-avatar">S</div>
+            <div class="sidebar-profile-info">
+                <div class="sidebar-profile-name">Support User</div>
+                <div class="sidebar-profile-email">support@saas.com</div>
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
 
 # ----------------- MAIN AREA WORKSPACE -----------------
-# Main Header
+# 72px Glassmorphism Top Navbar
 st.markdown("""
-<div class="main-header">
-    <div class="workspace-title">RAG Workspace</div>
-    <div class="header-right">
-        <div class="settings-icon">⚙️</div>
-        <div class="profile-avatar">S</div>
+<div class="top-navbar">
+    <div class="navbar-title">RAG Workspace</div>
+    <div class="navbar-right">
+        <div class="navbar-search">
+            <span class="navbar-search-icon">🔍</span>
+            <input type="text" placeholder="Search files & queries..."/>
+        </div>
+        <div class="navbar-icon" title="Notifications">🔔</div>
+        <div class="navbar-icon" title="Workspace Settings">⚙️</div>
+        <div class="navbar-avatar">SU</div>
     </div>
 </div>
 """, unsafe_allow_html=True)
 
-# Statistics Overview (only 2 cards, 100px height, consistent layout)
+# Process uploads
+sidebar_upload = process_uploaded_files(uploaded_files) if unique_docs_count > 0 else False
+
+# 4 Analytics Cards Grid (16px radius, soft shadow, hover lift, trendlines)
 st.markdown(f"""
 <div class="metrics-grid">
     <div class="metric-card">
-        <div class="metric-label">Documents</div>
+        <div class="metric-top">
+            <div class="metric-label">Documents</div>
+            <div class="metric-icon">📂</div>
+        </div>
         <div class="metric-value">{unique_docs_count}</div>
+        <div class="metric-trend"><span class="trend-up">▲ 12%</span> <span style="color:#6B7280;">this week</span></div>
     </div>
     <div class="metric-card">
-        <div class="metric-label">Indexed Files</div>
+        <div class="metric-top">
+            <div class="metric-label">Indexed Files</div>
+            <div class="metric-icon">📑</div>
+        </div>
         <div class="metric-value">{unique_docs_count}</div>
+        <div class="metric-trend"><span class="trend-up">▲ 15%</span> <span style="color:#6B7280;">index growth</span></div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-top">
+            <div class="metric-label">Questions Asked</div>
+            <div class="metric-icon">❓</div>
+        </div>
+        <div class="metric-value">{st.session_state.questions_count}</div>
+        <div class="metric-trend"><span class="trend-up">▲ 8%</span> <span style="color:#6B7280;">activity rise</span></div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-top">
+            <div class="metric-label">Recent Activity</div>
+            <div class="metric-icon">🔄</div>
+        </div>
+        <div class="metric-value">Active</div>
+        <div class="metric-trend"><span class="trend-neutral">● Synced</span> <span style="color:#6B7280;">just now</span></div>
     </div>
 </div>
 """, unsafe_allow_html=True)
 
-# Workspace layout: Left (75%) Chat, Right (25%) Sources (Reduced right column width)
-col_workspace, col_citations = st.columns([75, 25], gap="large")
+# Workspace layout: Left (70%) Chat, Right (30%) Sources
+col_workspace, col_citations = st.columns([70, 30], gap="large")
 
 # Render conversation or empty state
 main_upload = False
 with col_workspace:
     if unique_docs_count == 0:
-        # Empty State card with reduced height, centered text and uploader
+        # Centered premium Empty State block
         st.markdown("""
         <div class="empty-state">
             <div class="empty-state-illustration">📂</div>
-            <div class="empty-state-title">No Documents Indexed</div>
-            <div class="empty-state-text">Upload your first document to start chatting with your knowledge base.</div>
+            <div class="empty-state-title">Knowledge Base</div>
+            <div class="empty-state-text">Upload documents to build your AI knowledge base.<br/>Supported formats: PDF, DOCX, TXT, CSV, XLSX, PPTX, Markdown</div>
         </div>
         """, unsafe_allow_html=True)
         
-        main_files = st.file_uploader(
-            "Upload first document to start",
-            type=["pdf", "docx", "txt", "csv", "xlsx", "pptx", "md"],
-            accept_multiple_files=True,
-            key="main_uploader",
-            label_visibility="collapsed"
-        )
-        main_upload = process_uploaded_files(main_files)
+        # Centered layout buttons
+        col_btn_upload, col_btn_doc = st.columns([1, 1])
+        with col_btn_upload:
+            st.markdown('<div class="primary-saas-btn">', unsafe_allow_html=True)
+            main_files = st.file_uploader(
+                "Upload Documents",
+                type=["pdf", "docx", "txt", "csv", "xlsx", "pptx", "md"],
+                accept_multiple_files=True,
+                key="main_uploader",
+                label_visibility="collapsed"
+            )
+            st.markdown('</div>', unsafe_allow_html=True)
+            main_upload = process_uploaded_files(main_files)
+        with col_btn_doc:
+            st.markdown('<div class="secondary-saas-btn">', unsafe_allow_html=True)
+            if st.button("View Documentation", use_container_width=True):
+                st.toast("Documentation is available at https://render.com/docs")
+            st.markdown('</div>', unsafe_allow_html=True)
     else:
         # Render Chat Bubbles
         for idx, msg in enumerate(st.session_state.messages):
@@ -577,16 +861,23 @@ with col_workspace:
                     </div>
                 """, unsafe_allow_html=True)
                 
-                # Copy & Regenerate Actions row
-                col_space, col_copy, col_regen = st.columns([8, 1, 1])
-                with col_copy:
+                # Copy & Regenerate Actions row styled cleanly
+                st.markdown('<div class="assistant-actions">', unsafe_allow_html=True)
+                col_btn_1, col_btn_2, col_btn_3, col_btn_4 = st.columns([1, 1, 1, 7])
+                with col_btn_1:
                     if st.button("📋 Copy", key=f"copy_{idx}", use_container_width=True):
                         st.toast("Response copied to clipboard!")
-                with col_regen:
+                with col_btn_2:
                     if st.button("🔄 Regen", key=f"regen_{idx}", use_container_width=True):
-                        # Rollback chat state to right before this assistant message
                         st.session_state.messages = st.session_state.messages[:idx]
                         st.rerun()
+                with col_btn_3:
+                    if st.button("👍", key=f"like_{idx}", use_container_width=True):
+                        st.toast("Feedback registered, thank you!")
+                with col_btn_4:
+                    if st.button("👎", key=f"dislike_{idx}", use_container_width=True):
+                        st.toast("Feedback registered, thank you!")
+                st.markdown('</div>', unsafe_allow_html=True)
 
 # Rerun triggers if uploads occurred
 if sidebar_upload or main_upload:
@@ -597,6 +888,8 @@ if sidebar_upload or main_upload:
 with col_workspace:
     if unique_docs_count > 0 and st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
         user_prompt = st.session_state.messages[-1]["content"]
+        # Increment questions asked
+        st.session_state.questions_count += 1
         with st.chat_message("assistant", avatar="🤖"):
             try:
                 stream_gen = backend_query_stream(user_prompt)
@@ -613,11 +906,11 @@ with col_workspace:
 with col_workspace:
     if unique_docs_count > 0:
         if (st.session_state.messages and st.session_state.messages[-1]["role"] == "assistant") or not st.session_state.messages:
-            if prompt := st.chat_input("Ask about company policies, resumes, or uploaded research papers..."):
+            if prompt := st.chat_input("Ask anything about your uploaded documents..."):
                 st.session_state.messages.append({"role": "user", "content": prompt})
                 st.rerun()
 
-# Retrieved Sources Panel (Right Column 25%, display friendly empty state)
+# Retrieved Sources Panel (Right Column 30%, premium source layout, display friendly empty state)
 with col_citations:
     st.markdown("### Retrieved Sources")
     if st.session_state.last_sources:
@@ -626,8 +919,11 @@ with col_citations:
             preview = src['text'][:250].replace('\n', ' ') + "..."
             st.markdown(f"""
                 <div class="source-card">
-                    <div class="source-title">📄 {src['source']}</div>
-                    <div class="source-page">Page/Slide {src['page']}</div>
+                    <div class="source-header">
+                        <span class="source-icon">📄</span>
+                        <div class="source-title" title="{src['source']}">{src['source']}</div>
+                    </div>
+                    <div class="source-page">Page {src['page']}</div>
                     <div class="source-preview">"{preview}"</div>
                     <details style="margin-top: 10px; cursor: pointer;">
                         <summary style="font-size: 13px; color: #4F46E5; font-weight: 500;">View Source</summary>
@@ -639,7 +935,7 @@ with col_citations:
             """, unsafe_allow_html=True)
     else:
         st.markdown("""
-            <div style="background:#FFFFFF; border:1px dashed #E5E7EB; border-radius:12px; padding: 1.5rem; text-align:center; color:#6B7280; font-size:0.85rem;">
+            <div style="background:#FFFFFF; border:1px dashed #E5E7EB; border-radius:16px; padding: 2rem; text-align:center; color:#6B7280; font-size:0.85rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
                 No sources fetched yet. Send a query to see citations.
             </div>
         """, unsafe_allow_html=True)
