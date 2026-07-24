@@ -4,24 +4,21 @@ import requests
 import io
 import time
 from datetime import datetime
-from fpdf import FPDF
 from typing import List, Dict, Any
-
-# Set Page Config
-st.set_page_config(
-    page_title="RAG.SaaS Enterprise Workspace",
-    page_icon="⚡",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
-
-# Load configurations and modules
 import config
 from utils import get_system_metrics, l2_distance_to_confidence, get_logger
 import json
 
 logger = get_logger("SaaSFrontendUI")
 
+st.set_page_config(
+    page_title="RAG Workspace",
+    page_icon="⚡",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# Global helper for streaming queries
 def backend_query_stream(prompt: str):
     """Queries the backend streaming endpoint and yields text tokens while saving sources."""
     try:
@@ -43,336 +40,34 @@ def backend_query_stream(prompt: str):
     except Exception as e:
         yield f"Backend connection failed: {str(e)}"
 
-# Inject Billion-Dollar SaaS Theme Styling
-st.markdown("""
-<style>
-    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
-    
-    /* 1. Global Reset & Body styling */
-    html, body, [class*="st-"] {
-        font-family: 'Outfit', sans-serif;
-        background-color: #F8FAFC !important;
-        color: #0F172A !important;
-    }
-    
-    .stApp {
-        background-color: #F8FAFC !important;
-    }
-    
-    /* Hide Streamlit Default Brandings */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-    [data-testid="stHeader"] {display: none !important;}
-    [data-testid="stDecoration"] {display: none !important;}
-    [data-testid="stToolbar"] {display: none !important;}
-    button[title="View fullscreen"] {display: none !important;}
-    
-    /* 2. Custom Scrollbars */
-    ::-webkit-scrollbar {
-        width: 6px;
-        height: 6px;
-    }
-    ::-webkit-scrollbar-track {
-        background: #F1F5F9;
-    }
-    ::-webkit-scrollbar-thumb {
-        background: #CBD5E1;
-        border-radius: 10px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-        background: #3B82F6;
-    }
-    
-    /* 3. Sidebar Customization */
-    [data-testid="stSidebar"] {
-        background-color: #0F172A !important;
-        border-right: 1px solid #1E293B !important;
-        padding-top: 1.5rem;
-    }
-    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p,
-    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h3,
-    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h4,
-    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] span {
-        color: #E2E8F0 !important;
-    }
-    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h3 {
-        color: #94A3B8 !important;
-        font-size: 0.85rem;
-        text-transform: uppercase;
-        letter-spacing: 0.1rem;
-        margin-top: 1.5rem;
-        margin-bottom: 0.5rem;
-        font-weight: 600;
-    }
-    
-    /* 4. Top Sticky Navbar */
-    .top-navbar {
-        position: sticky;
-        top: 0;
-        z-index: 99;
-        background: rgba(255, 255, 255, 0.85);
-        backdrop-filter: blur(12px);
-        border-bottom: 1px solid #E2E8F0;
-        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
-        padding: 12px 24px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 1.5rem;
-    }
-    .profile-avatar {
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: bold;
-        font-size: 0.85rem;
-        border: 2px solid #E2E8F0;
-    }
-    
-    /* 5. Custom Analytics Dashboard Cards */
-    .analytics-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 1.25rem;
-        margin-bottom: 2rem;
-    }
-    .analytics-card {
-        background: #FFFFFF;
-        border: 1px solid #E2E8F0;
-        border-radius: 12px;
-        padding: 1.25rem;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-    }
-    .analytics-card:hover {
-        transform: translateY(-4px);
-        border-color: #3B82F6;
-        box-shadow: 0 10px 25px rgba(59, 130, 246, 0.15);
-    }
-    .card-meta {
-        font-size: 0.75rem;
-        color: #64748B;
-        font-weight: 500;
-        text-transform: uppercase;
-        letter-spacing: 0.05rem;
-    }
-    .card-value {
-        font-size: 1.8rem;
-        font-weight: 700;
-        color: #0F172A;
-        margin-top: 0.5rem;
-        background: linear-gradient(90deg, #0F172A, #1E3A8A);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-    }
-    
-    /* 6. Document Inventory List Cards */
-    .doc-saas-card {
-        background: #F8FAFC;
-        border: 1px solid #E2E8F0;
-        border-radius: 10px;
-        padding: 10px 14px;
-        margin-bottom: 0.75rem;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        transition: border-color 0.2s ease;
-    }
-    .doc-saas-card:hover {
-        border-color: #3B82F6;
-    }
-    .doc-meta {
-        font-size: 0.75rem;
-        color: #64748B;
-    }
-    
-    /* 7. Chat Windows Styling (ChatGPT-like) */
-    .message-container {
-        display: flex;
-        gap: 16px;
-        padding: 1.5rem;
-        border-bottom: 1px solid #F1F5F9;
-        align-items: flex-start;
-    }
-    .message-container.user {
-        background-color: #EFF6FF;
-    }
-    .message-container.assistant {
-        background-color: #FFFFFF;
-        border-left: 3px solid #2563EB;
-    }
-    .avatar-wrapper {
-        width: 38px;
-        height: 38px;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: bold;
-        flex-shrink: 0;
-        font-size: 1rem;
-    }
-    .avatar-wrapper.user {
-        background-color: #DBEAFE;
-        color: #2563EB;
-        border: 1px solid #BFDBFE;
-    }
-    .avatar-wrapper.assistant {
-        background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
-        color: white;
-    }
-    .msg-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 0.5rem;
-    }
-    .msg-author {
-        font-weight: 600;
-        font-size: 0.95rem;
-        color: #0F172A;
-    }
-    .message-container.user .msg-author {
-        color: #1E3A8A;
-    }
-    .message-container.assistant .msg-author {
-        color: #2563EB;
-    }
-    .msg-time {
-        font-size: 0.75rem;
-        color: #64748B;
-        margin-left: 10px;
-    }
-    .msg-body {
-        font-size: 0.95rem;
-        color: #334155;
-        line-height: 1.6;
-    }
-    
-    /* 8. Citation cards & Progress bars (Right Column) */
-    .citation-card {
-        background: #FFFFFF;
-        border: 1px solid #E2E8F0;
-        border-radius: 12px;
-        padding: 14px;
-        margin-bottom: 1rem;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-    }
-    .confidence-container {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 8px;
-        font-size: 0.8rem;
-    }
-    .confidence-bar-outer {
-        width: 100%;
-        height: 5px;
-        background: #E2E8F0;
-        border-radius: 10px;
-        overflow: hidden;
-    }
-    .confidence-bar-inner {
-        height: 100%;
-        border-radius: 10px;
-        transition: width 0.5s ease;
-    }
-    
-    /* Custom input bar drop shadow styling */
-    .stChatInputContainer {
-        border-radius: 24px !important;
-        border: 1px solid #E2E8F0 !important;
-        background-color: #FFFFFF !important;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05) !important;
-        transition: all 0.3s ease !important;
-        padding: 4px 10px !important;
-    }
-    .stChatInputContainer:focus-within {
-        border-color: #2563EB !important;
-        box-shadow: 0 0 20px rgba(37, 99, 235, 0.15) !important;
-    }
-    
-    /* Styling Buttons */
-    .stButton>button {
-        background: #FFFFFF;
-        color: #1E293B;
-        border: 1px solid #E2E8F0;
-        border-radius: 8px;
-        padding: 6px 12px;
-        font-size: 0.85rem;
-        font-weight: 500;
-        transition: all 0.2s ease;
-    }
-    .stButton>button:hover {
-        background: #F8FAFC;
-        border-color: #2563EB;
-        color: #2563EB;
-    }
-    
-    /* Primary Gradient Button Action */
-    .gradient-btn-wrapper .stButton>button {
-        background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%) !important;
-        color: white !important;
-        border: none !important;
-    }
-    .gradient-btn-wrapper .stButton>button:hover {
-        box-shadow: 0 0 12px rgba(37, 99, 235, 0.4) !important;
-        transform: scale(1.02);
-    }
-</style>
-""", unsafe_allow_html=True)
-
-# Helper: Export chat history to PDF
-def export_chat_pdf(messages: List[Dict[str, str]]) -> bytes:
-    try:
-        pdf = FPDF()
-        pdf.add_page()
-        pdf.set_font("Helvetica", size=12)
-        pdf.cell(200, 10, text="RAG.SaaS Workspace - Exported Chat", ln=True, align='C')
-        pdf.ln(10)
-        
-        for msg in messages:
-            role = "User" if msg["role"] == "user" else "Assistant"
-            pdf.set_font("Helvetica", style="B", size=11)
-            pdf.cell(200, 8, text=f"{role}:", ln=True)
-            pdf.set_font("Helvetica", size=10)
-            
-            content_cleaned = msg["content"].encode("latin1", errors="ignore").decode("latin1")
-            pdf.multi_cell(0, 6, text=content_cleaned)
-            pdf.ln(4)
-            
-        return bytes(pdf.output())
-    except Exception as e:
-        logger.error(f"Error compiling export PDF: {e}")
-        return b""
-
-# Helper: Export chat to TXT
-def export_chat_txt(messages: List[Dict[str, str]]) -> bytes:
-    lines = []
-    lines.append(f"RAG.SaaS Enterprise Conversation Export - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-    lines.append("="*50 + "\n")
-    for msg in messages:
-        role = "USER" if msg["role"] == "user" else "ASSISTANT"
-        lines.append(f"[{role}]:\n{msg['content']}\n")
-        lines.append("-"*50 + "\n")
-    return "\n".join(lines).encode("utf-8")
+# Helper to process uploaded files
+def process_uploaded_files(files_list):
+    if not files_list:
+        return False
+    new_upload = False
+    for uploaded_file in files_list:
+        file_key = f"processed_{uploaded_file.name}_{uploaded_file.size}"
+        if file_key not in st.session_state:
+            new_upload = True
+            st.session_state[file_key] = True
+            with st.spinner(f"Ingesting {uploaded_file.name}..."):
+                file_bytes = uploaded_file.getvalue()
+                files = {"file": (uploaded_file.name, file_bytes, uploaded_file.type)}
+                try:
+                    res = requests.post(f"{config.BACKEND_URL}/upload", files=files)
+                    if res.status_code == 200:
+                        st.toast(f"Indexed: {uploaded_file.name}", icon="✅")
+                    else:
+                        st.error(f"Error '{uploaded_file.name}': {res.json().get('detail', 'Error')}")
+                except Exception as e:
+                    st.error(f"Ingestion failed: {e}")
+    return new_upload
 
 # Initialize Session variables
 if "messages" not in st.session_state:
     st.session_state.messages = []
 if "last_sources" not in st.session_state:
     st.session_state.last_sources = []
-if "debug_mode" not in st.session_state:
-    st.session_state.debug_mode = False
 
 # Fetch stats from backend API
 try:
@@ -393,43 +88,276 @@ except Exception as e:
     logger.error(f"Failed to fetch stats from backend: {e}")
 
 unique_docs_count = len(unique_docs)
-sys_metrics = get_system_metrics()
 
-# ----------------- TOP NAVBAR HEADER -----------------
-st.markdown(f"""
-<div class="top-navbar">
-    <div style="display: flex; align-items: center; gap: 10px;">
-        <span style="font-size: 1.3rem;">⚡</span>
-        <span style="font-weight: 700; font-size: 1.2rem; letter-spacing:-0.03rem; background: linear-gradient(90deg, #FFFFFF, #94A3B8); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">RAG.SaaS Workspace</span>
-    </div>
-    <div style="display: flex; align-items: center; gap: 16px;">
-        <span class="badge" style="background: rgba(124, 58, 237, 0.15); color: #8B5CF6; border: 1px solid rgba(124, 58, 237, 0.3);">🤖 Model: {config.OPENROUTER_MODEL.split("/")[-1]}</span>
-        <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10B981; border: 1px solid rgba(16, 185, 129, 0.3);">🟢 status: online</span>
-        <div class="profile-avatar">S</div>
-    </div>
-</div>
-""", unsafe_allow_html=True)
-
-# ----------------- ANALYTICS DASHBOARD ROW -----------------
-st.markdown(f"""
-<div class="analytics-grid">
-    <div class="analytics-card">
-        <div class="card-meta">Total Documents</div>
-        <div class="card-value">{unique_docs_count}</div>
-    </div>
-    <div class="analytics-card">
-        <div class="card-meta">Total Chunks</div>
-        <div class="card-value">{total_chunks_count}</div>
-    </div>
-    <div class="analytics-card">
-        <div class="card-meta">Memory Usage</div>
-        <div class="card-value">{sys_metrics['process_memory_mb']} MB</div>
-    </div>
-    <div class="analytics-card">
-        <div class="card-meta">Vector DB Size</div>
-        <div class="card-value">{total_chunks_count} vectors</div>
-    </div>
-</div>
+# CSS Injection
+st.markdown("""
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    
+    /* 1. Reset and base styling */
+    html, body, [class*="st-"] {
+        font-family: 'Inter', sans-serif;
+        background-color: #F8FAFC !important;
+        color: #111827 !important;
+    }
+    
+    .stApp {
+        background-color: #F8FAFC !important;
+    }
+    
+    /* Hide Streamlit default headers & branding */
+    [data-testid="stHeader"] {display: none !important;}
+    footer {visibility: hidden;}
+    
+    /* 2. Scrollbars */
+    ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+        background: #F1F5F9;
+    }
+    ::-webkit-scrollbar-thumb {
+        background: #E2E8F0;
+        border-radius: 10px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        background: #4F46E5;
+    }
+    
+    /* 3. Sidebar */
+    [data-testid="stSidebar"] {
+        background-color: #0F172A !important;
+        border-right: 1px solid #1E293B !important;
+        padding-top: 2rem;
+    }
+    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p,
+    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h3,
+    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h4,
+    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] span {
+        color: #F8FAFC !important;
+    }
+    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h3 {
+        font-size: 14px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #94A3B8 !important;
+        margin-top: 1.5rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    /* 4. Main Header */
+    .main-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 1.5rem;
+        background: #FFFFFF;
+        border: 1px solid #E5E7EB;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+        margin-bottom: 1.5rem;
+        border-radius: 12px;
+    }
+    .workspace-title {
+        font-size: 24px;
+        font-weight: 600;
+        color: #111827;
+    }
+    .header-right {
+        display: flex;
+        align-items: center;
+        gap: 1.25rem;
+    }
+    .settings-icon {
+        font-size: 1.25rem;
+        color: #6B7280;
+        cursor: pointer;
+    }
+    .profile-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: #4F46E5;
+        color: #FFFFFF;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 0.875rem;
+    }
+    
+    /* 5. Metrics Cards */
+    .metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.25rem;
+        margin-bottom: 1.5rem;
+    }
+    .metric-card {
+        background: #FFFFFF;
+        border: 1px solid #E5E7EB;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+    }
+    .metric-label {
+        font-size: 14px;
+        font-weight: 500;
+        color: #6B7280;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 0.5rem;
+    }
+    .metric-value {
+        font-size: 28px;
+        font-weight: 600;
+        color: #111827;
+    }
+    
+    /* 6. Chat Bubbles */
+    .chat-row {
+        display: flex;
+        width: 100%;
+        margin-bottom: 1.25rem;
+        align-items: flex-start;
+    }
+    .user-row {
+        justify-content: flex-end;
+    }
+    .assistant-row {
+        justify-content: flex-start;
+        gap: 12px;
+    }
+    .chat-bubble {
+        max-width: 80%;
+        border-radius: 12px;
+        padding: 14px 18px;
+        font-size: 15px;
+        line-height: 1.6;
+    }
+    .user-bubble {
+        background-color: #4F46E5;
+        color: #FFFFFF;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+    }
+    .assistant-bubble {
+        background-color: #FFFFFF;
+        color: #111827;
+        border: 1px solid #E5E7EB;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+    }
+    .assistant-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background-color: #E5E7EB;
+        color: #4F46E5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 0.75rem;
+        flex-shrink: 0;
+    }
+    
+    /* Action buttons under Assistant response */
+    .stButton>button {
+        background: transparent !important;
+        color: #6B7280 !important;
+        border: none !important;
+        font-size: 13px !important;
+        padding: 2px 4px !important;
+        margin-top: -8px !important;
+    }
+    .stButton>button:hover {
+        color: #4F46E5 !important;
+    }
+    
+    /* 7. Source Cards (Right Column) */
+    .source-card {
+        background: #FFFFFF;
+        border: 1px solid #E5E7EB;
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 1rem;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+    }
+    .source-title {
+        font-size: 14px;
+        font-weight: 500;
+        color: #111827;
+        margin-bottom: 4px;
+    }
+    .source-page {
+        font-size: 12px;
+        color: #6B7280;
+        margin-bottom: 8px;
+    }
+    .source-preview {
+        font-size: 13px;
+        color: #374151;
+        line-height: 1.5;
+        margin-bottom: 10px;
+    }
+    
+    /* Empty State */
+    .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 3rem;
+        text-align: center;
+        background: #FFFFFF;
+        border: 1px dashed #E5E7EB;
+        border-radius: 12px;
+        margin-bottom: 1.5rem;
+    }
+    .empty-state-illustration {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+    .empty-state-text {
+        font-size: 15px;
+        color: #6B7280;
+        margin-bottom: 1.5rem;
+    }
+    
+    /* Custom input bar overrides */
+    .stChatInputContainer {
+        border-radius: 12px !important;
+        border: 1px solid #E5E7EB !important;
+        background-color: #FFFFFF !important;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03) !important;
+        padding: 4px 10px !important;
+    }
+    .stChatInputContainer:focus-within {
+        border-color: #4F46E5 !important;
+    }
+    
+    /* Sidebar List Document styling */
+    .sidebar-doc-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 6px 8px;
+        border-radius: 6px;
+        margin-bottom: 4px;
+    }
+    .sidebar-doc-row:hover {
+        background-color: #1E293B;
+    }
+    .sidebar-doc-name {
+        font-size: 13px;
+        color: #E2E8F0;
+        text-overflow: ellipsis;
+        overflow: hidden;
+        white-space: nowrap;
+        max-width: 140px;
+        display: inline-block;
+    }
+</style>
 """, unsafe_allow_html=True)
 
 # ----------------- SIDEBAR -----------------
@@ -437,57 +365,39 @@ with st.sidebar:
     # SaaS Branding Logo
     st.markdown("""
         <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 2rem;">
-            <img src="https://img.icons8.com/nolan/64/artificial-intelligence.png" width="38"/>
-            <h3 style="margin: 0; font-weight: 700; color: #FFFFFF; font-size: 1.15rem; letter-spacing: -0.02rem;">RAG.SaaS Enterprise</h3>
+            <span style="font-size: 1.5rem; color: #4F46E5;">⚡</span>
+            <h3 style="margin: 0; font-weight: 600; color: #FFFFFF; font-size: 1.2rem;">RAG Workspace</h3>
         </div>
     """, unsafe_allow_html=True)
     
-    st.markdown("### Ingest Knowledge Base")
+    st.markdown("### Knowledge Base")
     
-    # Drag-and-drop File Ingester
+    # Upload Document Zone in Sidebar
     uploaded_files = st.file_uploader(
-        "Ingest support files (PDF, DOCX, TXT, CSV, XLSX, PPTX, MD)",
+        "Upload Document",
         type=["pdf", "docx", "txt", "csv", "xlsx", "pptx", "md"],
         accept_multiple_files=True,
+        key="sidebar_uploader",
         label_visibility="collapsed"
     )
     
-    if uploaded_files:
-        new_upload = False
-        for uploaded_file in uploaded_files:
-            file_key = f"processed_{uploaded_file.name}_{uploaded_file.size}"
-            if file_key not in st.session_state:
-                new_upload = True
-                st.session_state[file_key] = True
-                with st.spinner(f"Ingesting {uploaded_file.name}..."):
-                    file_bytes = uploaded_file.getvalue()
-                    files = {"file": (uploaded_file.name, file_bytes, uploaded_file.type)}
-                    try:
-                        res = requests.post(f"{config.BACKEND_URL}/upload", files=files)
-                        if res.status_code == 200:
-                            st.toast(f"Indexed: {uploaded_file.name}", icon="✅")
-                        else:
-                            st.error(f"Error '{uploaded_file.name}': {res.json().get('detail', 'Error')}")
-                    except Exception as e:
-                        st.error(f"Ingestion failed: {e}")
-        
-        if new_upload:
-            st.toast("Vector Database updated!", icon="🗂️")
-            time.sleep(0.5)
-            st.rerun()
-
-    # Document card list with inline delete triggers!
-    st.markdown("### Document Index Manager")
+    # Search within documents
+    doc_search = st.text_input("Search documents...", placeholder="Search documents...", label_visibility="collapsed")
+    
+    # Filter documents based on search
     if unique_docs:
-        for doc in unique_docs:
-            # Render a custom file display card row
+        filtered_docs = [d for d in unique_docs if doc_search.lower() in d.lower()]
+    else:
+        filtered_docs = []
+
+    st.markdown("### Uploaded Documents")
+    if filtered_docs:
+        for doc in filtered_docs:
             col_doc_name, col_doc_del = st.columns([8, 2])
             with col_doc_name:
-                doc_chunks = documents_dict.get(doc, 0)
                 st.markdown(f"""
-                    <div style="font-size: 0.85rem; font-weight: 500; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
-                        📄 {doc}<br/>
-                        <span style="color:#94A3B8; font-size:0.7rem;">Chunks: {doc_chunks}</span>
+                    <div class="sidebar-doc-row">
+                        <span class="sidebar-doc-name" title="{doc}">📄 {doc}</span>
                     </div>
                 """, unsafe_allow_html=True)
             with col_doc_del:
@@ -507,221 +417,145 @@ with st.sidebar:
                     except Exception as e:
                         st.error(f"Failed to delete: {e}")
     else:
-        st.info("No files indexed. Drag and drop documents to start.")
-        
+        st.caption("No matching documents.")
+
     st.markdown("---")
-    st.markdown("### Workspace Configs")
-    
-    col_clear_chat, col_clear_db = st.columns(2)
-    with col_clear_chat:
-        if st.button("Clear Chat", use_container_width=True):
-            st.session_state.messages = []
-            st.session_state.last_sources = []
-            st.rerun()
-            
-    with col_clear_db:
-        if st.button("Purge DB", use_container_width=True):
-            try:
-                res = requests.post(f"{config.BACKEND_URL}/clear")
-                if res.status_code == 200:
-                    for key in list(st.session_state.keys()):
-                        if key.startswith("processed_"):
-                            del st.session_state[key]
-                    st.session_state.messages = []
-                    st.session_state.last_sources = []
-                    st.toast("Database purged!", icon="🧹")
-                    time.sleep(0.5)
-                    st.rerun()
-            except Exception as e:
-                st.error(f"Purge failed: {e}")
-                
-    # Download Chat History
-    if st.session_state.messages:
-        st.markdown("#### Conversation Export")
-        col_pdf, col_txt = st.columns(2)
-        with col_pdf:
-            pdf_bytes = export_chat_pdf(st.session_state.messages)
-            if pdf_bytes:
-                st.download_button(
-                    label="PDF Export",
-                    data=pdf_bytes,
-                    file_name=f"conversation_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
-                    mime="application/pdf",
-                    use_container_width=True
-                )
-        with col_txt:
-            txt_bytes = export_chat_txt(st.session_state.messages)
-            st.download_button(
-                label="TXT Export",
-                data=txt_bytes,
-                file_name=f"conversation_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt",
-                mime="text/plain",
-                use_container_width=True
-            )
-            
-    # Settings drawer
-    st.session_state.debug_mode = st.toggle("Retrieval Debug Console", value=st.session_state.debug_mode)
-    
-    st.markdown("""
-        <div style="text-align: center; font-size: 0.7rem; color: #94A3B8; margin-top: 1.5rem;">
-            RAG.SaaS Enterprise Workspace v2.0
-        </div>
-    """, unsafe_allow_html=True)
+    st.markdown("### Workspace Settings")
+    st.caption("Active Configs: K=5, MMR=0.5")
 
 # ----------------- MAIN AREA WORKSPACE -----------------
-col_workspace, col_citations = st.columns([65, 35], gap="large")
+# Main Header
+st.markdown("""
+<div class="main-header">
+    <div class="workspace-title">RAG Workspace</div>
+    <div class="header-right">
+        <div class="settings-icon">⚙️</div>
+        <div class="profile-avatar">S</div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
+# Process uploads
+sidebar_upload = process_uploaded_files(uploaded_files)
+
+# Statistics Overview (only 2 cards)
+st.markdown(f"""
+<div class="metrics-grid">
+    <div class="metric-card">
+        <div class="metric-label">Documents</div>
+        <div class="metric-value">{unique_docs_count}</div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-label">Indexed Files</div>
+        <div class="metric-value">{unique_docs_count}</div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+# Workspace layout: Left (70%) Chat, Right (30%) Sources
+col_workspace, col_citations = st.columns([70, 30], gap="large")
+
+# Render conversation or empty state
+main_upload = False
 with col_workspace:
-    # 1. RAG Conversation Bubbles (ChatGPT theme)
-    for idx, msg in enumerate(st.session_state.messages):
-        container_class = "message-container user" if msg["role"] == "user" else "message-container assistant"
-        avatar_class = "avatar-wrapper user" if msg["role"] == "user" else "avatar-wrapper assistant"
-        avatar_label = "U" if msg["role"] == "user" else "AI"
-        author_label = "You" if msg["role"] == "user" else "RAG Assistant"
-        timestamp = datetime.now().strftime("%I:%M %p") # Mock timestamp representation
-        
-        st.markdown(f"""
-            <div class="{container_class}">
-                <div class="{avatar_class}">{avatar_label}</div>
-                <div style="flex-grow: 1;">
-                    <div class="msg-header">
-                        <span class="msg-author">{author_label}</span>
-                        <span class="msg-time">{timestamp}</span>
-                    </div>
-                    <div class="msg-body">{msg['content']}</div>
-                </div>
-            </div>
+    if unique_docs_count == 0:
+        # Empty State
+        st.markdown("""
+        <div class="empty-state">
+            <div class="empty-state-illustration">📂</div>
+            <h3 style="margin-bottom: 8px; font-weight: 600;">No Documents Indexed</h3>
+            <div class="empty-state-text">Upload your first document to start chatting with your knowledge base.</div>
+        </div>
         """, unsafe_allow_html=True)
-
-    # 2. Main Chat Input Prompt
-    if prompt := st.chat_input("Ask about company policies, resumes, or uploaded research papers..."):
-        # Render user prompt immediately
-        timestamp = datetime.now().strftime("%I:%M %p")
-        st.markdown(f"""
-            <div class="message-container user">
-                <div class="avatar-wrapper user">U</div>
-                <div style="flex-grow: 1;">
-                    <div class="msg-header">
-                        <span class="msg-author">You</span>
-                        <span class="msg-time">{timestamp}</span>
-                    </div>
-                    <div class="msg-body">{prompt}</div>
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
-        st.session_state.messages.append({"role": "user", "content": prompt})
         
-        # Handle assistant stream completion
-        with st.chat_message("assistant", avatar="🤖"):
-            if total_chunks_count == 0:
-                answer = "No document index is active yet. Please ingest files in the sidebar."
-                st.write(answer)
-                st.session_state.messages.append({"role": "assistant", "content": answer})
-                st.session_state.last_sources = []
+        main_files = st.file_uploader(
+            "Upload first document to start",
+            type=["pdf", "docx", "txt", "csv", "xlsx", "pptx", "md"],
+            accept_multiple_files=True,
+            key="main_uploader",
+            label_visibility="collapsed"
+        )
+        main_upload = process_uploaded_files(main_files)
+    else:
+        # Render Chat Bubbles
+        for idx, msg in enumerate(st.session_state.messages):
+            if msg["role"] == "user":
+                st.markdown(f"""
+                    <div class="chat-row user-row">
+                        <div class="chat-bubble user-bubble">{msg['content']}</div>
+                    </div>
+                """, unsafe_allow_html=True)
             else:
-                try:
-                    # Stream tokens word-by-word from backend
-                    stream_gen = backend_query_stream(prompt)
-                    full_response = st.write_stream(stream_gen)
-                    
-                    st.session_state.messages.append({"role": "assistant", "content": full_response})
-                except Exception as e:
-                    logger.error(f"RAG query execution failed: {e}")
-                    error_msg = f"API Service failure: {str(e)}"
-                    st.error(error_msg)
-                    st.session_state.messages.append({"role": "assistant", "content": error_msg})
-                    st.session_state.last_sources = []
-                    
+                st.markdown(f"""
+                    <div class="chat-row assistant-row">
+                        <div class="assistant-avatar">AI</div>
+                        <div class="chat-bubble assistant-bubble">{msg['content']}</div>
+                    </div>
+                """, unsafe_allow_html=True)
+                
+                # Copy & Regenerate Actions row
+                col_space, col_copy, col_regen = st.columns([8, 1, 1])
+                with col_copy:
+                    if st.button("📋 Copy", key=f"copy_{idx}", use_container_width=True):
+                        st.toast("Response copied to clipboard!")
+                with col_regen:
+                    if st.button("🔄 Regen", key=f"regen_{idx}", use_container_width=True):
+                        # Rollback chat state to right before this assistant message
+                        st.session_state.messages = st.session_state.messages[:idx]
+                        st.rerun()
+
+# Rerun triggers if uploads occurred
+if sidebar_upload or main_upload:
+    time.sleep(0.5)
+    st.rerun()
+
+# Stream Generation Block (automatically triggered if last message is a user message)
+with col_workspace:
+    if unique_docs_count > 0 and st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
+        user_prompt = st.session_state.messages[-1]["content"]
+        with st.chat_message("assistant", avatar="🤖"):
+            try:
+                stream_gen = backend_query_stream(user_prompt)
+                full_response = st.write_stream(stream_gen)
+                st.session_state.messages.append({"role": "assistant", "content": full_response})
+            except Exception as e:
+                error_msg = f"RAG Query failure: {str(e)}"
+                st.error(error_msg)
+                st.session_state.messages.append({"role": "assistant", "content": error_msg})
+                st.session_state.last_sources = []
         st.rerun()
 
-# ----------------- CITATIONS DRAWER (RIGHT COLUMN) -----------------
+# Input panel (Only visible when not waiting for an assistant response)
+with col_workspace:
+    if unique_docs_count > 0:
+        if (st.session_state.messages and st.session_state.messages[-1]["role"] == "assistant") or not st.session_state.messages:
+            if prompt := st.chat_input("Ask about company policies, resumes, or uploaded research papers..."):
+                st.session_state.messages.append({"role": "user", "content": prompt})
+                st.rerun()
+
+# Retrieved Sources Panel (Right Column 30%)
 with col_citations:
-    st.markdown("### 🔍 Retrieved Context Citations")
-    
+    st.markdown("### Retrieved Sources")
     if st.session_state.last_sources:
-        st.markdown("Context snippets fetched using MMR (Maximal Marginal Relevance) Diversity ranking:")
-        
         for idx, src in enumerate(st.session_state.last_sources):
-            # L2 flat distance converted to confidence %
-            confidence = l2_distance_to_confidence(src["score"])
-            
-            # Map color of the progress bar based on confidence score
-            if confidence >= 70:
-                progress_color = "#10B981"  # Success (Green)
-            elif confidence >= 40:
-                progress_color = "#F59E0B"  # Warning (Amber)
-            else:
-                progress_color = "#EF4444"  # Danger (Red)
-                
+            # Clean preview
+            preview = src['text'][:250].replace('\n', ' ') + "..."
             st.markdown(f"""
-                <div class="citation-card">
-                    <div style="font-weight: 600; font-size: 0.85rem; color:#FFFFFF; margin-bottom: 6px;">
-                        📄 {src['source']} (Page/Slide: {src['page']})
-                    </div>
-                    <div class="confidence-container">
-                        <span style="color:#94A3B8;">Similarity Confidence</span>
-                        <span style="color:{progress_color}; font-weight:700;">{confidence}%</span>
-                    </div>
-                    <div class="confidence-bar-outer">
-                        <div class="confidence-bar-inner" style="width: {confidence}%; background-color: {progress_color};"></div>
-                    </div>
-                    <div style="font-size:0.75rem; color:#94A3B8; margin-top:8px;">
-                        Chunk Index: <code>{src['chunk_id']}</code> | L2 Dist: <code>{src['score']:.4f}</code>
-                    </div>
-                    <div style="font-size: 0.85rem; color:#E2E8F0; background: #1B2335; border: 1px solid #273449; border-radius: 8px; padding: 8px; margin-top:10px; font-style:italic;">
-                        "{src['text'][:250]}..."
-                    </div>
+                <div class="source-card">
+                    <div class="source-title">📄 {src['source']}</div>
+                    <div class="source-page">Page/Slide {src['page']}</div>
+                    <div class="source-preview">"{preview}"</div>
+                    <details style="margin-top: 10px; cursor: pointer;">
+                        <summary style="font-size: 13px; color: #4F46E5; font-weight: 500;">View Source</summary>
+                        <div style="font-size: 13px; color: #374151; margin-top: 8px; line-height: 1.5; background: #F8FAFC; border: 1px solid #E5E7EB; padding: 10px; border-radius: 6px; font-style: italic;">
+                            "{src['text']}"
+                        </div>
+                    </details>
                 </div>
             """, unsafe_allow_html=True)
     else:
         st.markdown("""
-            <div style="background:#131A2A; border:1px dashed #273449; border-radius:12px; padding: 1.5rem; text-align:center; color:#94A3B8; font-size:0.85rem; margin-top:1rem;">
-                No query has been sent yet.<br/>Citations, relevance statistics, and confidence bars will render here.
+            <div style="background:#FFFFFF; border:1px dashed #E5E7EB; border-radius:12px; padding: 1.5rem; text-align:center; color:#6B7280; font-size:0.85rem;">
+                No sources fetched yet. Send a query to see citations.
             </div>
         """, unsafe_allow_html=True)
-        
-    # Suggested Questions (General queries)
-    st.markdown("### 💡 Quick Suggestions")
-    suggestions = [
-        "What is the main aim of this paper?",
-        "which projects are there in resume",
-        "What certifications are listed?",
-        "What is the refund window policy?"
-    ]
-    for sug in suggestions:
-        if st.button(sug, key=f"sug_{sug}", use_container_width=True):
-            st.session_state.messages.append({"role": "user", "content": sug})
-            with st.chat_message("user"):
-                st.write(sug)
-                
-            with st.chat_message("assistant"):
-                if total_chunks_count == 0:
-                    answer = "Please upload documents first in the sidebar before asking suggestions."
-                    st.write(answer)
-                    st.session_state.messages.append({"role": "assistant", "content": answer})
-                    st.session_state.last_sources = []
-                else:
-                    stream_gen = backend_query_stream(sug)
-                    full_response = st.write_stream(stream_gen)
-                    st.session_state.messages.append({"role": "assistant", "content": full_response})
-            st.rerun()
-
-# ----------------- RETRIEVAL DEBUG PANEL -----------------
-if st.session_state.debug_mode:
-    st.markdown("---")
-    st.subheader("🛠️ RAG Retrieval Debug Console")
-    
-    col_settings, col_dist = st.columns(2)
-    with col_settings:
-        st.markdown("**Workspace RAG Configurations:**")
-        st.write(f"- Chunk size: `{config.CHUNK_SIZE}` characters")
-        st.write(f"- Chunk overlap: `{config.CHUNK_OVERLAP}` characters")
-        st.write(f"- Active context limit (K): `{config.DEFAULT_K}`")
-        st.write(f"- MMR diversity parameter lambda: `{config.MMR_LAMBDA}`")
-    with col_dist:
-        if st.session_state.last_sources:
-            st.markdown("**MMR Vector Distance Allocation:**")
-            for idx, src in enumerate(st.session_state.last_sources):
-                confidence = l2_distance_to_confidence(src["score"])
-                st.write(f"Chunk {idx+1} [{src['source']}]: {confidence}% confidence")
-                st.progress(int(confidence))
